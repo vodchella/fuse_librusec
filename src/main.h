@@ -6,6 +6,7 @@
 #define FUSE_LIBRUSEC_MAIN_H
 
 #include <fuse.h>
+#include "utils/list.h"
 
 #define PATH_TO_DIRECTORY 1
 #define PATH_TO_FILE      2
@@ -31,19 +32,22 @@
 
 struct sqlile_callback_data
 {
-    int              operation;
-    void*            buf;
-    fuse_fill_dir_t  filler;
-    unsigned long    count;
-    char             result[MAX_BUFFER_LENGTH];
+    int               operation;
+    void*             buf;
+    fuse_fill_dir_t   filler;
+    unsigned long     count;
+    char              result[MAX_BUFFER_LENGTH];
 };
 
 struct path_info
 {
-    int     subdir;
-    int     level;
-    size_t  file_length;
-    char    target[MAX_BUFFER_LENGTH];
+    struct list_head  list;
+    int               path_type;
+    int               subdir;
+    int               level;
+    size_t            file_length;
+    char              path[MAX_BUFFER_LENGTH];
+    char              target[MAX_BUFFER_LENGTH];
 };
 
 #endif //FUSE_LIBRUSEC_MAIN_H

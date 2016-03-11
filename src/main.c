@@ -10,13 +10,18 @@
 
 
 #define FUSE_USE_VERSION 30
+#define _GNU_SOURCE
 
 
 #include <fuse.h>
 #include <zip.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "main.h"
+#include "file_cache.h"
 #include "utils/sqlite.h"
 #include "utils/str.h"
 
@@ -77,8 +82,10 @@ get_path_type(const char* path, struct path_info* pi)
 
             if (pi) {
                 string_copy_to_buffer( pi->target, pch );
+                pi->path_type = result;
                 pi->level = level;
                 pi->subdir = subdir;
+                string_copy_to_buffer( pi->path, path );
                 if (result == PATH_TO_FILE) {
                     pi->file_length = sqlite_get_book_file_length( pi->target );
                 }
@@ -172,10 +179,25 @@ librusec_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int
 librusec_open(const char *path, struct fuse_file_info *fi)
 {
-    int path_type = get_path_type( path, NULL );
+    struct path_info* pi;
+    struct path_info  pinf;
+    int path_type = 0;
+    bool not_found = false;
+    pi = fcache_find_by_path( path );
+    if (!pi) {
+        memset( &pinf, 0, sizeof(struct path_info) );
+        path_type = get_path_type( path, &pinf );
+        pi = &pinf;
+        not_found = true;
+    } else {
+        path_type = pi->path_type;
+    }
     if (path_type == PATH_TO_FILE) {
         if ((fi->flags & 3) != O_RDONLY) {
             return -EROFS;
+        }
+        if (not_found) {
+            fcache_append_with_copy( pi );
         }
         return 0;
     }
@@ -185,13 +207,15 @@ librusec_open(const char *path, struct fuse_file_info *fi)
 
 static int
 librusec_read(const char *path, char *buf, size_t size, off_t offset,
-                      struct fuse_file_info *fi)
+              struct fuse_file_info *fi)
 {
     (void)fi;
 
-    struct path_info pi;
-    memset( &pi, 0, sizeof(struct path_info) );
-    int path_type = get_path_type( path, &pi );
+    struct path_info* pi = fcache_find_by_path( path );  // Always get cached record
+    if (!pi) {
+        return -ENOENT;
+    }
+    int path_type = pi->path_type;
     if (path_type == PATH_TO_FILE) {
         zip_t* f = NULL;
         struct zip_stat file_info;
@@ -199,7 +223,7 @@ librusec_read(const char *path, char *buf, size_t size, off_t offset,
         if (f) {
             char file_name[MAX_BUFFER_LENGTH];
             memset( file_name, 0, MAX_BUFFER_LENGTH );
-            sqlite_get_book_file_name( pi.target, file_name );
+            sqlite_get_book_file_name( pi->target, file_name );
             if (file_name) {
                 int rs = zip_stat( f, file_name, 0, &file_info );
                 if (!rs) {
@@ -239,7 +263,7 @@ librusec_read(const char *path, char *buf, size_t size, off_t offset,
                 }
             }
             zip_close( f );
-            return (int)size; // TODO Разобраться, почему результат int, а возвращать надо size_t
+            return (int)size;
         }
     }
     return 0;
@@ -276,5 +300,6 @@ main(int argc, char* argv[])
     if (rc) {
         return rc;
     }
+    fcache_init();
     return fuse_main( argc, argv, &librusec_oper, NULL );
 }

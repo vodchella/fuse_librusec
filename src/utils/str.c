@@ -19,7 +19,7 @@ string_format(char *fmt, char *buf, size_t buf_size, ...)
 
 
 void
-string_copy_to_buffer(char *dest, char *src)
+string_copy_to_buffer(char *dest, const char *src)
 {
     if (dest && src) {
         memset( dest, 0, MAX_BUFFER_LENGTH );

@@ -39,8 +39,8 @@ get_path_type(const char* path, struct path_info* pi)
         size_t path_len = strlen( path );
         size_t buf_size = path_len + 1;
         char buf[buf_size];
-        memset( &buf, 0, buf_size );
-        strncpy( (char*)&buf, path, path_len );
+        memset( buf, 0, buf_size );
+        strncpy( buf, path, path_len );
 
         int level = 0;
         char* pch = strtok_r( buf, PATH_DELIMITER, &save_ptr );
@@ -220,7 +220,6 @@ librusec_read(const char *path, char *buf, size_t size, off_t offset,
                                 size_t remains = (size_t) offset; // offset always positive
                                 r = zip_fread( zf, buffer, (remains > sizeof(buffer) ? sizeof(buffer) : remains) );
                                 while (bytes_read < offset) {
-                                    printf("%s", buffer);
                                     bytes_read += r;
                                     remains -= r;
                                     memset( buffer, 0, (size_t)r );
@@ -232,7 +231,7 @@ librusec_read(const char *path, char *buf, size_t size, off_t offset,
                             memset( buf, 0, size );
                             zip_fread( zf, buf, size );
 
-                            zip_fclose( zf);
+                            zip_fclose( zf );
                         }
                     } else {
                         size = 0;

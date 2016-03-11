@@ -13,6 +13,8 @@ bool sqlite_book_exists(char* book);
 unsigned long sqlite_get_prefixes(struct sqlile_callback_data* data, int subdir);
 unsigned long sqlite_get_authors(struct sqlile_callback_data* data, char* prefix);
 unsigned long sqlite_get_books(struct sqlile_callback_data* data, int subdir, char* param);
+void sqlite_get_book_file_name(char* book, char* file_name);
+size_t sqlite_get_book_file_length(char *book);
 int sqlite_open_database();
 
 #endif //FUSE_LIBRUSEC_SQLITE_H

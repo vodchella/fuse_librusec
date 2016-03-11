@@ -15,6 +15,7 @@
 #define  PATH_DELIMITER       "/"
 #define  SQL_PREFIXES         "select distinct %s from books order by %s"
 #define  SQL_VALUE_EXISTS     "select count(*) from books where %s = '%s'"
+#define  SQL_GET_VALUE        "select max(%s) from books where %s = '%s'"
 #define  SQL_AUTHORS          "select distinct author from books where author_prefix = '%s' order by author"
 #define  SQL_BOOKS            "select distinct name from books where %s = '%s' order by name"
 #define  ROOT_PATH            "/"
@@ -39,9 +40,10 @@ struct sqlile_callback_data
 
 struct path_info
 {
-    int  subdir;
-    int  level;
-    char target[MAX_BUFFER_LENGTH];
+    int     subdir;
+    int     level;
+    size_t  file_length;
+    char    target[MAX_BUFFER_LENGTH];
 };
 
 #endif //FUSE_LIBRUSEC_MAIN_H

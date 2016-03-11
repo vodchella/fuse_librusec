@@ -1,0 +1,25 @@
+# Look for the header file.
+FIND_PATH(LIBZIP_INCLUDE_DIR NAMES zip.h)
+
+# Look for the library.
+FIND_LIBRARY(LIBZIP_LIBRARY NAMES libzip)
+IF(NOT LIBZIP_LIBRARY)
+    # Такой вот грязный хак, нивкакую не хочет видеть либу, хотя она там есть
+    SET(LIBZIP_LIBRARY "/usr/lib/x86_64-linux-gnu/libzip.so")
+ENDIF(NOT LIBZIP_LIBRARY)
+
+# check if lib was found and include is present
+IF (LIBZIP_INCLUDE_DIR AND LIBZIP_LIBRARY)
+    SET (LIBZIP_FOUND TRUE)
+ELSE (LIBZIP_INCLUDE_DIR AND LIBZIP_LIBRARY)
+    SET (LIBZIP_FOUND FALSE)
+ENDIF (LIBZIP_INCLUDE_DIR AND LIBZIP_LIBRARY)
+
+# Copy the results to the output variables.
+IF(LIBZIP_FOUND)
+    SET(LIBZIP_LIBRARIES ${LIBZIP_LIBRARY})
+    SET(LIBZIP_INCLUDE_DIRS ${LIBZIP_INCLUDE_DIR})
+ELSE(LIBZIP_FOUND)
+    SET(LIBZIP_LIBRARIES)
+    SET(LIBZIP_INCLUDE_DIRS)
+ENDIF(LIBZIP_FOUND)

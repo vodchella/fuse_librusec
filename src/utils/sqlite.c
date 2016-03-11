@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include "str.h"
 #include "../main.h"
 
@@ -31,6 +32,7 @@ sqlile_operation_callback(void *d, int argc, char **argv, char **azColName)
         case SQLITE_OP_RETURN_ONE_VALUE:
             if (argc == 1) {
                 if (argv[0]) {
+                    data->count++;
                     string_copy_to_buffer( data->result, argv[0] );
                 }
             }
@@ -74,13 +76,46 @@ sqlite_get_prefixes(struct sqlile_callback_data* data, int subdir)
 {
     char* column = sqlite_get_column_by_subdir( subdir );
     if (column) {
-        char sql_buf[255];
-        memset( &sql_buf, 0, 255 );
+        char sql_buf[MAX_BUFFER_LENGTH];
+        memset( &sql_buf, 0, MAX_BUFFER_LENGTH );
         string_format( (char *)SQL_PREFIXES, sql_buf, sizeof(sql_buf), column, column );
         data->operation = SQLITE_OP_FILL_BUFFER;
         return sqlile_operation( sql_buf, data );
     }
     return 0;
+}
+
+
+void
+sqlite_get_value(char* column, char* select_column, char* value, char* result)
+{
+    struct sqlile_callback_data data;
+    memset(&data, 0, sizeof(struct sqlile_callback_data));
+    data.operation = SQLITE_OP_RETURN_ONE_VALUE;
+
+    char sql_buf[MAX_BUFFER_LENGTH];
+    memset( &sql_buf, 0, MAX_BUFFER_LENGTH );
+    string_format( (char *)SQL_GET_VALUE, sql_buf, sizeof(sql_buf), select_column, column, value );
+
+    sqlile_operation( sql_buf, &data );
+    strncpy( result, data.result, strlen( data.result ) );
+}
+
+
+void
+sqlite_get_book_file_name(char* book, char* file_name)
+{
+    sqlite_get_value( "name", "file_name", book, file_name );
+}
+
+
+size_t
+sqlite_get_book_file_length(char *book)
+{
+    char num[10];
+    memset( num, 0, 10 );
+    sqlite_get_value( "name", "file_size", book, num );
+    return strtoul( num, NULL, 0 );
 }
 
 
@@ -91,8 +126,8 @@ sqlite_value_exists(char* column, char* value)
     memset(&data, 0, sizeof(struct sqlile_callback_data));
     data.operation = SQLITE_OP_RETURN_ONE_VALUE;
 
-    char sql_buf[512];
-    memset( &sql_buf, 0, 512 );
+    char sql_buf[MAX_BUFFER_LENGTH];
+    memset( &sql_buf, 0, MAX_BUFFER_LENGTH );
     string_format( (char *)SQL_VALUE_EXISTS, sql_buf, sizeof(sql_buf), column, value );
 
     sqlile_operation( sql_buf, &data );
@@ -101,7 +136,7 @@ sqlite_value_exists(char* column, char* value)
 
 
 bool
-sqlite_prefix_exists(char *prefix, int subdir)
+sqlite_prefix_exists(char* prefix, int subdir)
 {
     char* column = sqlite_get_column_by_subdir( subdir );
     return sqlite_value_exists( column, prefix );

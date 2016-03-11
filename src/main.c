@@ -217,9 +217,9 @@ librusec_read(const char *path, char *buf, size_t size, off_t offset,
     }
     int path_type = pi->path_type;
     if (path_type == PATH_TO_FILE) {
-        zip_t* f = NULL;
+        struct zip* f = NULL;
         struct zip_stat file_info;
-        f = zip_open( "/home/twister/Dropbox/fuse_librusec/some_file.zip", ZIP_RDONLY, NULL );
+        f = zip_open( "/home/twister/Dropbox/fuse_librusec/some_file.zip", /*ZIP_RDONLY*/ 0, NULL );
         if (f) {
             char file_name[MAX_BUFFER_LENGTH];
             memset( file_name, 0, MAX_BUFFER_LENGTH );
@@ -232,7 +232,7 @@ librusec_read(const char *path, char *buf, size_t size, off_t offset,
                         if (offset + size > len) {
                             size = len - offset;
                         }
-                        zip_file_t *zf = zip_fopen_index( f, file_info.index, 0 );
+                        struct zip_file* zf = zip_fopen_index( f, file_info.index, 0 );
                         if (zf) {
                             if (offset) {
                                 char buffer[1024 * 1024];
